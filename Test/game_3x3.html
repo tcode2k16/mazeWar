@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Maze War</title>
+    <style>
+        canvas {
+            display: block;
+            position: absolute;
+            margin: auto;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+    </style>
+</head>
+<body onload="main()">
+<p id="info"></p>
+<canvas id="canvas"></canvas>
+<script>
+    var x=0,y=0;
+    var canvas,ctx;
+    var WIDTH=1000,HEIGHT=600,LENGTH=HEIGHT/13;
+    var A=65,D=68,W=87,S=83,T=84,H=72,J=74,G=71;
+    var mazes = [
+        ["000000000000000000000000001111001100000100111000000110101100001101001000000111111000000000090000000000000000",12,9],
+        ["00000000000000000000011111101100111111100010000010000001000000111111100000110000011000000011111011000011111111100000100000000000001111111000001111011110000011100110001100000000100000111110111111111000000000111000000011000111111010110000011000100011111011110000001110000011100111100000100000001111001000000000000000000090",20,16],
+    ];
+    var player_point=28,heading=0,player_view_list; //heading 0: up 1: right 2: down 3: left
+    var map_width=mazes[0][1],map_height= mazes[0][2],main_maze = mazes[0][0];
+    var keystate;
+    var moves;
+    var points = {
+        "a":[x,y],
+        "b":[x,y+2*LENGTH],
+        "c":[x+2*LENGTH,y+2*LENGTH],
+        "d":[x+2*LENGTH,y+11*LENGTH],
+        "e":[x,y+11*LENGTH],
+        "f":[x,y+HEIGHT],
+        "g":[x+2*LENGTH,y+5*LENGTH],
+        "h":[x+2*LENGTH,y+8*LENGTH],
+        "i":[x+5*LENGTH,y+2*LENGTH],
+        "k":[x+5*LENGTH,y+5*LENGTH],
+        "l":[x+5*LENGTH,y+8*LENGTH],
+        "m":[x+5*LENGTH,y+11*LENGTH],
+        "n":[x+8*LENGTH,y+2*LENGTH],
+        "o":[x+8*LENGTH,y+5*LENGTH],
+        "p":[x+8*LENGTH,y+8*LENGTH],
+        "q":[x+8*LENGTH,y+11*LENGTH],
+        "r":[x+11*LENGTH,y+2*LENGTH],
+        "s":[x+HEIGHT,y],
+        "t":[x+HEIGHT,y+2*LENGTH],
+        "u":[x+11*LENGTH,y+5*LENGTH],
+        "v":[x+11*LENGTH,y+8*LENGTH],
+        "w":[x+11*LENGTH,y+11*LENGTH],
+        "x":[x+HEIGHT,y+11*LENGTH],
+        "y":[x+HEIGHT,y+HEIGHT],
+    };
+
+
+    moves = {
+        "0lb": function () {
+            this.rS();
+            drawLineBetweenPoints("b","r");
+            drawLineBetweenPoints("w","e");
+        },
+        "0rb": function () {
+            this.lS();
+            drawLineBetweenPoints("d","x");
+            drawLineBetweenPoints("c","t");
+
+        },
+        "0lrb": function () {
+            drawLineBetweenPoints("b","t");
+            drawLineBetweenPoints("e","x");
+        },
+        "0b": function () {
+            this.lS();
+            this.rS();
+            drawLineBetweenPoints("c","r");
+            drawLineBetweenPoints("d","w");
+        },
+        "0lrg": function () {
+            drawLineBetweenPoints("c","d");
+            drawLineBetweenPoints("r","w");
+            drawLineBetweenPoints("b","c");
+            drawLineBetweenPoints("e","d");
+            drawLineBetweenPoints("r","t");
+            drawLineBetweenPoints("w","x");
+        },
+        "0lg": function () {
+            this.rS();
+            drawLineBetweenPoints("c","d");
+        },
+        "0rg": function () {
+            this.lS();
+            drawLineBetweenPoints("r","w");
+        },
+        "0g": function () {
+            this.lS();
+            this.rS();
+        },
+        "lL": function () {
+            drawLineBetweenPoints("a","k");
+            drawLineBetweenPoints("k","l");
+            drawLineBetweenPoints("l","f");
+        },
+        "lS": function () {
+            drawLineBetweenPoints("a","c");
+            drawLineBetweenPoints("c","d");
+            drawLineBetweenPoints("d","f");
+        },
+        "rL": function () {
+            drawLineBetweenPoints("s","o");
+            drawLineBetweenPoints("o","p");
+            drawLineBetweenPoints("p","y");
+        },
+        "rS": function () {
+            drawLineBetweenPoints("r","s");
+            drawLineBetweenPoints("r","w");
+            drawLineBetweenPoints("w","y");
+        }
+        //moves l: left r: right g: go b: block L: long S: short
+    };
+
+    function main() {
+        canvas = document.getElementById("canvas");
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        ctx = canvas.getContext("2d");
+
+        info = document.getElementById("info");
+
+
+        init();
+
+
+        keystate = {};
+        document.addEventListener("keydown", function(evt) {
+            if (evt.keyCode == W && main_maze[player_view_list[0][1]] == "1"){
+                if (heading == "0")player_point -= map_width;
+                if (heading == "1")player_point += 1;
+                if (heading == "2")player_point += map_width;
+                if (heading == "3")player_point -= 1;
+                drawImg();
+            }
+            if (evt.keyCode == S && main_maze[player_view_list[2][1]] == "1"){
+                if (heading == "0")player_point += map_width;
+                if (heading == "1")player_point -= 1;
+                if (heading == "2")player_point -= map_width;
+                if (heading == "3")player_point += 1;
+                drawImg();
+            }
+            if (evt.keyCode == A){
+                if (heading != 0) {
+                    heading -= 1;
+                }else {
+                    heading = 3;
+                }
+                drawImg();
+            }
+            if (evt.keyCode == D){
+                if (heading != 3) {
+                    heading += 1;
+                }else {
+                    heading = 0
+                }
+                drawImg();
+            }
+
+        });
+    }
+
+    function init() {
+        drawImg();
+    }
+
+    function update() { //up
+        if (heading == 0) {
+            player_view_list = [
+                [player_point - map_width - 1, player_point - map_width, player_point - map_width + 1],
+                [player_point - 1,             player_point,             player_point + 1],
+                [player_point + map_width - 1, player_point + map_width, player_point + map_width + 1]
+
+
+            ];
+        }
+        if (heading == 1) { //right
+            player_view_list = [
+                [player_point - map_width + 1, player_point + 1, player_point + map_width + 1],
+                [player_point - map_width,     player_point,     player_point + map_width],
+                [player_point - map_width - 1, player_point - 1, player_point + map_width - 1]
+
+
+            ];
+        }
+        if (heading == 2) { //down
+            player_view_list = [
+                [player_point + map_width - 1, player_point + map_width, player_point + map_width + 1],
+                [player_point - 1,             player_point,             player_point + 1],
+                [player_point - map_width - 1, player_point - map_width, player_point - map_width + 1]
+
+
+            ];
+        }
+        if (heading == 3) { //left
+            player_view_list = [
+                [player_point + map_width - 1, player_point - 1, player_point - map_width - 1],
+                [player_point + map_width,     player_point,     player_point - map_width],
+                [player_point + map_width + 1, player_point + 1, player_point - map_width + 1]
+
+
+            ];
+        }
+        info.textContent = player_point + " " + heading;
+    }
+
+
+    function drawLine(point_1,point_2,color) {
+        ctx.beginPath();
+        ctx.moveTo(point_1[0],point_1[1]);
+        ctx.lineTo(point_2[0],point_2[1]);
+        ctx.strokeStyle = color;
+        ctx.stroke()
+    }
+
+    function drawLineBetweenPoints(p1,p2,color) {
+        drawLine(points[p1],points[p2],color);
+    }
+
+    function clear_canvas() {
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    }
+
+    function drawImg() {
+        update();
+        clear_canvas();
+
+        if (main_maze[player_view_list[0][1]] == "0") {
+            if (main_maze[player_view_list[1][0]] == "0" && main_maze[player_view_list[1][2]] == "0") {
+                moves["0b"]();
+            }else if (main_maze[player_view_list[1][0]] == "1" && main_maze[player_view_list[1][2]] == "0") {
+                moves["0lb"]();
+            }else if (main_maze[player_view_list[1][0]] == "0" && main_maze[player_view_list[1][2]] == "1") {
+                moves["0rb"]();
+            }else if (main_maze[player_view_list[1][0]] == "1" && main_maze[player_view_list[1][2]] == "1") {
+                moves["0lrb"]();
+            }else {
+
+            }
+        }else if (main_maze[player_view_list[0][1]] == "1") {
+            if (main_maze[player_view_list[1][0]] == "0" && main_maze[player_view_list[1][2]] == "0") {
+                moves["0g"]();
+            }else if (main_maze[player_view_list[1][0]] == "1" && main_maze[player_view_list[1][2]] == "0") {
+                moves["0lg"]();
+            }else if (main_maze[player_view_list[1][0]] == "0" && main_maze[player_view_list[1][2]] == "1") {
+                moves["0rg"]();
+            }else if (main_maze[player_view_list[1][0]] == "1" && main_maze[player_view_list[1][2]] == "1") {
+                moves["0lrg"]();
+            }else {
+
+            }
+        }else {
+
+        }
+
+    }
+
+
+</script>
+</body>
+</html>
